@@ -1,0 +1,45 @@
+.instructions-card {
+    background: linear-gradient(135deg,
+            rgba(var(--color-secondary-rgb), 0.1) 0%,
+            rgba(var(--color-accent-rgb), 0.05) 100%);
+}
+
+.instructions-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.instructions-icon {
+    color: var(--color-accent);
+}
+
+.instructions-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.instructions-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.instruction-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.instruction-check {
+    color: var(--color-secondary);
+    flex-shrink: 0;
+    margin-top: 2px;
+}

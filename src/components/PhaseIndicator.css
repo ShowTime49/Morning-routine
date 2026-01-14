@@ -1,0 +1,125 @@
+.phase-indicator {
+    background: var(--color-background-card);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--spacing-lg);
+    transition: all var(--transition-base);
+}
+
+.phase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.phase-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.phase-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+}
+
+.phase-icon-secondary {
+    background: rgba(var(--color-secondary-rgb), 0.2);
+    color: var(--color-secondary);
+}
+
+.phase-icon-primary {
+    background: rgba(var(--color-primary-rgb), 0.2);
+    color: var(--color-primary);
+}
+
+.phase-icon-success {
+    background: rgba(63, 185, 80, 0.2);
+    color: var(--color-success);
+}
+
+.phase-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.phase-label {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.phase-description {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.phase-progress-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.phase-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--color-background);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.phase-progress-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.5s ease-out;
+}
+
+.progress-secondary {
+    background: linear-gradient(90deg, var(--color-secondary) 0%, var(--color-accent) 100%);
+}
+
+.progress-primary {
+    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%);
+}
+
+.progress-success {
+    background: var(--color-success);
+}
+
+.phase-progress-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    min-width: 40px;
+    text-align: right;
+}
+
+.phase-times {
+    display: flex;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+    .phase-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .phase-label {
+        font-size: 1.25rem;
+    }
+}

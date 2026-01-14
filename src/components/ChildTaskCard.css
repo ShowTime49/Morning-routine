@@ -1,0 +1,221 @@
+.child-card {
+    transition: all var(--transition-base);
+}
+
+.child-card.child-complete {
+    border-color: var(--color-success);
+    box-shadow: 0 0 20px rgba(63, 185, 80, 0.2);
+}
+
+.child-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-md);
+}
+
+.child-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.child-name {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 var(--spacing-sm) 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    margin-left: calc(-1 * var(--spacing-xs));
+    border-radius: var(--radius-md);
+    transition: background var(--transition-fast);
+}
+
+.child-name:hover {
+    background: var(--color-background-hover);
+}
+
+.child-name .edit-icon {
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    color: var(--color-text-muted);
+}
+
+.child-name:hover .edit-icon {
+    opacity: 1;
+}
+
+.child-name-edit {
+    margin-bottom: var(--spacing-sm);
+}
+
+.child-name-input {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    max-width: 200px;
+}
+
+.child-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--color-background);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    max-width: 120px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-secondary) 0%, var(--color-accent) 100%);
+    border-radius: var(--radius-full);
+}
+
+.progress-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.child-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.complete-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(63, 185, 80, 0.2);
+    color: var(--color-success);
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.delete-btn {
+    color: var(--color-text-muted);
+}
+
+.delete-btn:hover {
+    color: var(--color-danger);
+    background: rgba(248, 81, 73, 0.1);
+}
+
+.task-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.task-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: var(--font-sans);
+}
+
+.task-button:hover {
+    border-color: var(--color-primary);
+    background: var(--color-background-hover);
+}
+
+.task-button.task-complete {
+    background: rgba(var(--color-secondary-rgb), 0.1);
+    border-color: var(--color-secondary);
+}
+
+.task-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.task-checkbox.checked {
+    background: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: white;
+}
+
+.task-emoji {
+    font-size: 1rem;
+}
+
+.task-label {
+    font-size: 0.875rem;
+    color: var(--color-text);
+}
+
+/* Delete Confirmation Modal */
+.delete-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: var(--spacing-md);
+}
+
+.delete-confirm-dialog {
+    background: var(--color-background-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-xl);
+    max-width: 320px;
+    text-align: center;
+}
+
+.delete-confirm-dialog h4 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.delete-confirm-dialog p {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin: 0 0 var(--spacing-lg) 0;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: center;
+}
+
+@media (max-width: 480px) {
+    .task-list {
+        flex-direction: column;
+    }
+
+    .task-button {
+        width: 100%;
+    }
+}

@@ -1,0 +1,68 @@
+.announcement-log {
+    display: flex;
+    flex-direction: column;
+    max-height: 300px;
+}
+
+.log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.log-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.log-icon {
+    color: var(--color-primary);
+}
+
+.log-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.log-container {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.log-empty {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    text-align: center;
+    padding: var(--spacing-lg) 0;
+}
+
+.log-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-background);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.log-time {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.log-message {
+    font-size: 0.875rem;
+    color: var(--color-text);
+    word-break: break-word;
+}

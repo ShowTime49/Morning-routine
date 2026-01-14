@@ -1,0 +1,39 @@
+.clock-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clock-display {
+    font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 2.5rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    color: var(--color-text);
+    background: linear-gradient(135deg,
+            var(--color-primary) 0%,
+            var(--color-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.clock-digit {
+    display: inline-block;
+    min-width: 0.6em;
+    text-align: center;
+    /* Smooth opacity transition prevents flash */
+    transition: transform 0.15s ease-out, opacity 0.1s ease-out;
+}
+
+/* No visual flash on change */
+.digit-changed {
+    /* Subtle, no jarring effect */
+}
+
+@media (max-width: 640px) {
+    .clock-display {
+        font-size: 1.75rem;
+    }
+}
