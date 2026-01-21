@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Trash2 } from 'lucide-react';
-import { useRoutine } from '@/context/RoutineContext';
+import { useRoutine } from '@/hooks/useRoutine';
 import './AnnouncementLog.css';
 
 const AnnouncementLog = () => {

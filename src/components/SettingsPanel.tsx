@@ -12,7 +12,7 @@ import {
     RotateCcw,
     Save
 } from 'lucide-react';
-import { useRoutine } from '@/context/RoutineContext';
+import { useRoutine } from '@/hooks/useRoutine';
 import './SettingsPanel.css';
 
 interface SettingsPanelProps {

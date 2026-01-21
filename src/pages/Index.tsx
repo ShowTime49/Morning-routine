@@ -7,7 +7,7 @@ import ChildTaskCard from '@/components/ChildTaskCard';
 import AnnouncementLog from '@/components/AnnouncementLog';
 import InstructionsCard from '@/components/InstructionsCard';
 import SettingsPanel from '@/components/SettingsPanel';
-import { useRoutine } from '@/context/RoutineContext';
+import { useRoutine } from '@/hooks/useRoutine';
 import { Phase } from '@/types';
 import './Index.css';
 

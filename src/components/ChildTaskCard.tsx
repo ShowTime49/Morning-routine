@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Sparkles, Pencil, Trash2, X } from 'lucide-react';
 import { Child } from '@/types';
-import { useRoutine } from '@/context/RoutineContext';
+import { useRoutine } from '@/hooks/useRoutine';
+import ProgressRing from '@/components/ui/ProgressRing';
 import './ChildTaskCard.css';
 
 interface ChildTaskCardProps {
@@ -66,35 +67,34 @@ const ChildTaskCard = ({ child, onToggleTask }: ChildTaskCardProps) => {
             transition={{ duration: 0.2 }}
         >
             <div className="child-header">
-                <div className="child-info">
-                    {isEditing ? (
-                        <div className="child-name-edit">
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                className="input child-name-input"
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                                onBlur={handleSaveName}
-                                onKeyDown={handleKeyDown}
-                                maxLength={20}
-                            />
-                        </div>
-                    ) : (
-                        <h3 className="child-name" onClick={() => setIsEditing(true)}>
-                            {child.name}
-                            <Pencil size={14} className="edit-icon" />
-                        </h3>
-                    )}
-                    <div className="child-progress">
-                        <div className="progress-bar">
-                            <motion.div
-                                className="progress-fill"
-                                animate={{ width: `${progress}%` }}
-                                transition={{ duration: 0.3 }}
-                            />
-                        </div>
-                        <span className="progress-text">{completedCount}/3</span>
+                <div className="child-info" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <ProgressRing
+                        progress={progress}
+                        label={`${completedCount}/3`}
+                        size={56}
+                        strokeWidth={5}
+                        color={isComplete ? 'var(--color-success)' : 'var(--color-secondary)'}
+                    />
+                    <div>
+                        {isEditing ? (
+                            <div className="child-name-edit">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    className="input child-name-input"
+                                    value={editName}
+                                    onChange={(e) => setEditName(e.target.value)}
+                                    onBlur={handleSaveName}
+                                    onKeyDown={handleKeyDown}
+                                    maxLength={20}
+                                />
+                            </div>
+                        ) : (
+                            <h3 className="child-name" onClick={() => setIsEditing(true)}>
+                                {child.name}
+                                <Pencil size={14} className="edit-icon" />
+                            </h3>
+                        )}
                     </div>
                 </div>
                 <div className="child-actions">

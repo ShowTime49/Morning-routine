@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Clock as ClockIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Clock from './Clock';
 import { Phase } from '@/types';
-import { useRoutine } from '@/context/RoutineContext';
+import { useRoutine } from '@/hooks/useRoutine';
 import './PhaseIndicator.css';
 
 interface PhaseIndicatorProps {

@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { Child, Announcement, RoutineSettings, BluetoothDevice } from '@/types';
+import {
+    playCompleteSound,
+    playAlarmSound,
+    playUrgentSound,
+    speak
+} from '@/services/audioService';
+import { requestBluetoothDevice } from '@/services/bluetoothService';
 
 interface RoutineContextType {
     children: Child[];
@@ -22,6 +29,7 @@ interface RoutineContextType {
     disconnectBluetooth: () => void;
 
     playSound: (type: 'complete' | 'alarm' | 'urgent') => void;
+    getRoutineStatus: () => 'ON_TRACK' | 'URGENT' | 'LATE';
 }
 
 const defaultSettings: RoutineSettings = {
@@ -32,58 +40,7 @@ const defaultSettings: RoutineSettings = {
     volume: 0.7,
 };
 
-const RoutineContext = createContext<RoutineContextType | undefined>(undefined);
-
-// Audio context for playing sounds
-let audioContext: AudioContext | null = null;
-
-const getAudioContext = (): AudioContext => {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    }
-    return audioContext;
-};
-
-// Generate sounds programmatically
-const playTone = (frequency: number, duration: number, volume: number, type: OscillatorType = 'sine') => {
-    const ctx = getAudioContext();
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-
-    oscillator.frequency.value = frequency;
-    oscillator.type = type;
-    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + duration);
-};
-
-const playCompleteSound = (volume: number) => {
-    // Pleasant ascending chime
-    playTone(523.25, 0.15, volume); // C5
-    setTimeout(() => playTone(659.25, 0.15, volume), 100); // E5
-    setTimeout(() => playTone(783.99, 0.3, volume), 200); // G5
-};
-
-const playAlarmSound = (volume: number) => {
-    // Gentle wake-up melody
-    playTone(440, 0.2, volume); // A4
-    setTimeout(() => playTone(523.25, 0.2, volume), 250); // C5
-    setTimeout(() => playTone(659.25, 0.2, volume), 500); // E5
-    setTimeout(() => playTone(783.99, 0.4, volume), 750); // G5
-};
-
-const playUrgentSound = (volume: number) => {
-    // Attention-grabbing alert
-    playTone(880, 0.1, volume, 'square'); // A5
-    setTimeout(() => playTone(988, 0.1, volume, 'square'), 150); // B5
-    setTimeout(() => playTone(880, 0.1, volume, 'square'), 300); // A5
-    setTimeout(() => playTone(988, 0.1, volume, 'square'), 450); // B5
-};
+export const RoutineContext = createContext<RoutineContextType | undefined>(undefined);
 
 export function RoutineProvider({ children: childrenProp }: { children: ReactNode }) {
     // Load from localStorage or use defaults
@@ -104,12 +61,22 @@ export function RoutineProvider({ children: childrenProp }: { children: ReactNod
 
     const [bluetoothDevice, setBluetoothDevice] = useState<BluetoothDevice | null>(null);
 
-    // Persist children to localStorage
+    // Persistence effects
+    useEffect(() => {
+        const savedChildren = localStorage.getItem('routine-children');
+        if (savedChildren) {
+            try {
+                setChildren(JSON.parse(savedChildren));
+            } catch (e) {
+                console.error('Failed to parse saved children', e);
+            }
+        }
+    }, []); // Run once on mount
+
     useEffect(() => {
         localStorage.setItem('routine-children', JSON.stringify(children));
     }, [children]);
 
-    // Persist settings to localStorage
     useEffect(() => {
         localStorage.setItem('routine-settings', JSON.stringify(settings));
     }, [settings]);
@@ -128,21 +95,27 @@ export function RoutineProvider({ children: childrenProp }: { children: ReactNod
     };
 
     const toggleTask = (childId: number, task: 'brush' | 'wash' | 'dress') => {
-        const child = children.find(c => c.id === childId);
-        const wasComplete = child ? child[task] : false;
+        setChildren(prev => {
+            const newState = prev.map(c => c.id === childId ? { ...c, [task]: !c[task] } : c);
 
-        setChildren(prev =>
-            prev.map(c => c.id === childId ? { ...c, [task]: !c[task] } : c)
-        );
+            const child = newState.find(c => c.id === childId);
+            const originalChild = prev.find(c => c.id === childId);
+            const wasComplete = originalChild ? originalChild[task] : false;
 
-        // Play sound when completing a task (not when unchecking)
-        if (!wasComplete && settings.soundEnabled) {
-            playSound('complete');
-            const taskLabels = { brush: 'brushing teeth', wash: 'washing face', dress: 'getting dressed' };
-            if (child) {
+            // Voice Feedback & Sounds
+            if (child && child[task] && !wasComplete) {
+                if (settings.soundEnabled) {
+                    playCompleteSound(settings.volume);
+                    const taskLabel = task === 'brush' ? 'brushing' : task === 'wash' ? 'washing' : 'dressing';
+                    speak(`${child.name} finished ${taskLabel}! Great job.`);
+                }
+
+                const taskLabels = { brush: 'brushing teeth', wash: 'washing face', dress: 'getting dressed' };
                 addAnnouncement(`🎉 ${child.name} finished ${taskLabels[task]}!`);
             }
-        }
+
+            return newState;
+        });
     };
 
     const resetAllTasks = () => {
@@ -151,17 +124,12 @@ export function RoutineProvider({ children: childrenProp }: { children: ReactNod
 
     const addAnnouncement = (message: string) => {
         const time = new Date().toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true,
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
         });
         setAnnouncements(prev => [...prev, { id: Date.now(), message, time }]);
     };
 
-    const clearAnnouncements = () => {
-        setAnnouncements([]);
-    };
+    const clearAnnouncements = () => setAnnouncements([]);
 
     const updateSettings = (newSettings: Partial<RoutineSettings>) => {
         setSettings(prev => ({ ...prev, ...newSettings }));
@@ -169,49 +137,43 @@ export function RoutineProvider({ children: childrenProp }: { children: ReactNod
 
     const playSound = (type: 'complete' | 'alarm' | 'urgent') => {
         if (!settings.soundEnabled) return;
-
         switch (type) {
-            case 'complete':
-                playCompleteSound(settings.volume);
-                break;
-            case 'alarm':
-                playAlarmSound(settings.volume);
-                break;
-            case 'urgent':
-                playUrgentSound(settings.volume);
-                break;
+            case 'complete': playCompleteSound(settings.volume); break;
+            case 'alarm': playAlarmSound(settings.volume); break;
+            case 'urgent': playUrgentSound(settings.volume); break;
         }
     };
 
+    const getRoutineStatus = (): 'ON_TRACK' | 'URGENT' | 'LATE' => {
+        const now = new Date();
+        const [critH, critM] = settings.criticalTime.split(':').map(Number);
+        const critical = new Date();
+        critical.setHours(critH, critM, 0);
+
+        const diffInMinutes = Math.floor((critical.getTime() - now.getTime()) / 60000);
+
+        if (diffInMinutes < 0) return 'LATE';
+        if (diffInMinutes < 10) return 'URGENT';
+        return 'ON_TRACK';
+    };
+
     const connectBluetooth = async () => {
-        const nav = navigator as Navigator & { bluetooth?: { requestDevice: (options: { acceptAllDevices: boolean; optionalServices: string[] }) => Promise<{ id: string; name?: string; addEventListener: (event: string, handler: () => void) => void }> } };
-        if (!nav.bluetooth) {
-            addAnnouncement('⚠️ Bluetooth not supported in this browser');
-            return;
-        }
-
         try {
-            const device = await nav.bluetooth.requestDevice({
-                acceptAllDevices: true,
-                optionalServices: ['generic_access'],
-            });
+            const device = await requestBluetoothDevice();
+            if (device) {
+                setBluetoothDevice(device);
+                addAnnouncement(`🔗 Connected to ${device.name}`);
 
-            setBluetoothDevice({
-                id: device.id,
-                name: device.name || 'Unknown Device',
-                connected: true,
-            });
-
-            addAnnouncement(`🔗 Connected to ${device.name || 'Bluetooth device'}`);
-
-            device.addEventListener('gattserverdisconnected', () => {
-                setBluetoothDevice(prev => prev ? { ...prev, connected: false } : null);
-                addAnnouncement('📡 Bluetooth device disconnected');
-            });
-        } catch (error) {
-            if ((error as Error).name !== 'NotFoundError') {
-                addAnnouncement('❌ Failed to connect to Bluetooth device');
+                const raw = (device as any)._rawDevice;
+                if (raw) {
+                    raw.addEventListener('gattserverdisconnected', () => {
+                        setBluetoothDevice(prev => prev ? { ...prev, connected: false } : null);
+                        addAnnouncement('📡 Bluetooth device disconnected');
+                    });
+                }
             }
+        } catch (error) {
+            addAnnouncement(`❌ Bluetooth Error: ${(error as Error).message}`);
         }
     };
 
@@ -223,33 +185,14 @@ export function RoutineProvider({ children: childrenProp }: { children: ReactNod
     return (
         <RoutineContext.Provider
             value={{
-                children,
-                setChildren,
-                addChild,
-                removeChild,
-                updateChildName,
-                toggleTask,
-                resetAllTasks,
-                announcements,
-                addAnnouncement,
-                clearAnnouncements,
-                settings,
-                updateSettings,
-                bluetoothDevice,
-                connectBluetooth,
-                disconnectBluetooth,
-                playSound,
+                children, setChildren, addChild, removeChild, updateChildName, toggleTask, resetAllTasks,
+                announcements, addAnnouncement, clearAnnouncements,
+                settings, updateSettings,
+                bluetoothDevice, connectBluetooth, disconnectBluetooth,
+                playSound, getRoutineStatus,
             }}
         >
             {childrenProp}
         </RoutineContext.Provider>
     );
-}
-
-export function useRoutine() {
-    const context = useContext(RoutineContext);
-    if (!context) {
-        throw new Error('useRoutine must be used within a RoutineProvider');
-    }
-    return context;
 }

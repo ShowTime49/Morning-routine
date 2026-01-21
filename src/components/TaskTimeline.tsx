@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Clock, Utensils, BookOpen, Bus } from 'lucide-react';
-import { useRoutine } from '@/context/RoutineContext';
+import { useRoutine } from '@/hooks/useRoutine';
 import './TaskTimeline.css';
 
 interface TimelineItem {
