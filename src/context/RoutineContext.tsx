@@ -7,6 +7,7 @@ import {
     speak
 } from '@/services/audioService';
 import { requestBluetoothDevice } from '@/services/bluetoothService';
+import { dataService } from '@/services/dataService';
 
 interface RoutineContextType {
     children: Child[];
@@ -43,84 +44,95 @@ const defaultSettings: RoutineSettings = {
 export const RoutineContext = createContext<RoutineContextType | undefined>(undefined);
 
 export function RoutineProvider({ children: childrenProp }: { children: ReactNode }) {
-    // Load from localStorage or use defaults
-    const [children, setChildren] = useState<Child[]>(() => {
-        const saved = localStorage.getItem('routine-children');
-        return saved ? JSON.parse(saved) : [
-            { id: 1, name: 'Emma', brush: false, wash: false, dress: false },
-            { id: 2, name: 'Oliver', brush: false, wash: false, dress: false },
-        ];
-    });
+    // Initial empty state, will populate from Firebase
+    const [children, setChildren] = useState<Child[]>([]);
 
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
-    const [settings, setSettings] = useState<RoutineSettings>(() => {
-        const saved = localStorage.getItem('routine-settings');
-        return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
-    });
+    const [settings, setSettings] = useState<RoutineSettings>(defaultSettings);
 
     const [bluetoothDevice, setBluetoothDevice] = useState<BluetoothDevice | null>(null);
 
-    // Persistence effects
-    useEffect(() => {
-        const savedChildren = localStorage.getItem('routine-children');
-        if (savedChildren) {
-            try {
-                setChildren(JSON.parse(savedChildren));
-            } catch (e) {
-                console.error('Failed to parse saved children', e);
-            }
-        }
-    }, []); // Run once on mount
+    // --- Real-time Subscriptions --- //
 
+    // Subscribe to Children changes
     useEffect(() => {
-        localStorage.setItem('routine-children', JSON.stringify(children));
-    }, [children]);
+        const unsubscribe = dataService.subscribeToChildren((newChildren) => {
+            setChildren(prevChildren => {
+                // Check for completions to play sounds (Cross-device sync!)
+                newChildren.forEach(newChild => {
+                    const oldChild = prevChildren.find(c => c.id === newChild.id);
+                    if (!oldChild) return;
 
+                    (['brush', 'wash', 'dress'] as const).forEach(task => {
+                        if (newChild[task] && !oldChild[task]) {
+                            // Task just completed!
+                            if (settings.soundEnabled) {
+                                playCompleteSound(settings.volume);
+                                const taskLabel = task === 'brush' ? 'brushing' : task === 'wash' ? 'washing' : 'dressing';
+                                speak(`${newChild.name} finished ${taskLabel}! Great job.`);
+                            }
+
+                            const taskLabels = { brush: 'brushing teeth', wash: 'washing face', dress: 'getting dressed' };
+                            addAnnouncement(`🎉 ${newChild.name} finished ${taskLabels[task]}!`);
+                        }
+                    });
+                });
+                return newChildren;
+            });
+        });
+
+        return () => unsubscribe();
+    }, [settings.soundEnabled, settings.volume]); // Re-subscribe if sound settings change to capture latest settings in closure
+
+    // Subscribe to Settings changes
     useEffect(() => {
-        localStorage.setItem('routine-settings', JSON.stringify(settings));
-    }, [settings]);
+        const unsubscribe = dataService.subscribeToSettings((newSettings) => {
+            setSettings(newSettings);
+        });
+        return () => unsubscribe();
+    }, []);
+
+
+    // --- Actions (Write to Firebase) --- //
 
     const addChild = (name: string) => {
-        const newId = Math.max(0, ...children.map(c => c.id)) + 1;
-        setChildren(prev => [...prev, { id: newId, name, brush: false, wash: false, dress: false }]);
+        const newId = Math.max(0, ...children.map(c => c.id), 0) + 1;
+        const newChildren = [...children, { id: newId, name, brush: false, wash: false, dress: false }];
+        dataService.saveChildren(newChildren);
     };
 
     const removeChild = (id: number) => {
-        setChildren(prev => prev.filter(c => c.id !== id));
+        const newChildren = children.filter(c => c.id !== id);
+        dataService.saveChildren(newChildren);
     };
 
     const updateChildName = (id: number, name: string) => {
-        setChildren(prev => prev.map(c => c.id === id ? { ...c, name } : c));
+        const newChildren = children.map(c => c.id === id ? { ...c, name } : c);
+        dataService.saveChildren(newChildren);
     };
 
     const toggleTask = (childId: number, task: 'brush' | 'wash' | 'dress') => {
-        setChildren(prev => {
-            const newState = prev.map(c => c.id === childId ? { ...c, [task]: !c[task] } : c);
-
-            const child = newState.find(c => c.id === childId);
-            const originalChild = prev.find(c => c.id === childId);
-            const wasComplete = originalChild ? originalChild[task] : false;
-
-            // Voice Feedback & Sounds
-            if (child && child[task] && !wasComplete) {
-                if (settings.soundEnabled) {
-                    playCompleteSound(settings.volume);
-                    const taskLabel = task === 'brush' ? 'brushing' : task === 'wash' ? 'washing' : 'dressing';
-                    speak(`${child.name} finished ${taskLabel}! Great job.`);
-                }
-
-                const taskLabels = { brush: 'brushing teeth', wash: 'washing face', dress: 'getting dressed' };
-                addAnnouncement(`🎉 ${child.name} finished ${taskLabels[task]}!`);
-            }
-
-            return newState;
-        });
+        const child = children.find(c => c.id === childId);
+        if (child) {
+            // Optimistic update locally not needed strictly as listener is fast,
+            // but we write to DB and let the listener update the UI
+            dataService.toggleChildTask(childId, task, !child[task], children);
+        }
     };
 
     const resetAllTasks = () => {
-        setChildren(prev => prev.map(c => ({ ...c, brush: false, wash: false, dress: false })));
+        const newChildren = children.map(c => ({ ...c, brush: false, wash: false, dress: false }));
+        dataService.saveChildren(newChildren);
     };
+
+    const updateSettings = (newSettings: Partial<RoutineSettings>) => {
+        // Merge with existing settings
+        const merged = { ...settings, ...newSettings };
+        dataService.saveSettings(merged);
+    };
+
+    // --- Local Utils --- //
 
     const addAnnouncement = (message: string) => {
         const time = new Date().toLocaleTimeString('en-US', {
@@ -130,10 +142,6 @@ export function RoutineProvider({ children: childrenProp }: { children: ReactNod
     };
 
     const clearAnnouncements = () => setAnnouncements([]);
-
-    const updateSettings = (newSettings: Partial<RoutineSettings>) => {
-        setSettings(prev => ({ ...prev, ...newSettings }));
-    };
 
     const playSound = (type: 'complete' | 'alarm' | 'urgent') => {
         if (!settings.soundEnabled) return;
